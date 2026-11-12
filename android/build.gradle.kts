@@ -11,16 +11,20 @@ val newBuildDir: Directory =
     rootProject.layout.buildDirectory
         .dir("../../build")
         .get()
-rootProject.layout.buildDirectory.value(newBuildDir)
+rootProject.layout.buildDirectory.set(newBuildDir)
 
 subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
-    project.layout.buildDirectory.value(newSubprojectBuildDir)
-}
+    project.layout.buildDirectory.set(newSubprojectBuildDir)
 
-subprojects {
     // Check if NDK source.properties exists before evaluationDependsOn
-    val ndkDir = File(System.getenv("ANDROID_NDK_HOME") ?: "${System.getenv("ANDROID_SDK_ROOT") ?: System.getenv("ANDROID_HOME")}/ndk/28.2.13676358")
+    val ndkHome = System.getenv("ANDROID_NDK_HOME")
+    val sdkRoot = System.getenv("ANDROID_SDK_ROOT") ?: System.getenv("ANDROID_HOME")
+    val ndkDir = when {
+        !ndkHome.isNullOrBlank() -> File(ndkHome)
+        !sdkRoot.isNullOrBlank() -> File(sdkRoot, "ndk/28.2.13676358")
+        else -> File(System.getProperty("user.home"), "Library/Android/sdk/ndk/28.2.13676358")
+    }
     val ndkSourceProperties = File(ndkDir, "source.properties")
     if (ndkSourceProperties.exists()) {
         project.evaluationDependsOn(":app")
